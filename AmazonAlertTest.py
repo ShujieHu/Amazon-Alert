@@ -1,23 +1,29 @@
-import smtplib
-from AmazonAlert import *
-from smtplib import SMTP
-import unittest
 from mock import patch, Mock, MagicMock
+import unittest
+from smtplib import SMTP
+from sendEmail import *
+import smtplib
 import os
 os.environ['PASSWORD'] = 'testPass'
 
 
 class TestSendEmail(unittest.TestCase):
-    @patch('smtplib.SMTP_SSL')
-    def testSendEmail(self, mock_smtp):
+    @patch('sendEmail.ssl.create_default_context')
+    @patch('sendEmail.smtplib.SMTP_SSL')
+    def testSendEmail(self, mock_smtp, mock_context):
         title = 'testTitle'
         graph = 'alertEmail.png'
         receivers = ['test1@gmail.com']
-        tmp = MagicMock(smtplib.SMTP.login)
-        mock_smtp.return_value.login.return_value = tmp
-        sendEmail(title, graph, receivers)
-        mock_smtp.assert_called_with('smtp.gmail.com', 465)
-        tmp.assert_called()
+        # tmp = MagicMock()
+        # mock_smtp.return_value.login = tmp
+        config = Config()
+        config.sendEmail(title, graph, receivers)
+        login_return = MagicMock()
+        mock_smtp.assert_called()
+        mock_smtp.login = login_return
+
+        mock_smtp.assert_called_with(
+            'smtp.gmail.com', 465, context=mock_context.return_value)
 
 
 # class TestAddProduct(unittest.TestCase):
