@@ -18,16 +18,6 @@ import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg')
 
-AWS_ACCESS_KEY_ID = 'AKIAS6ERF7OV25AWKWX2'
-AWS_SECRET_ACCESS_KEY = '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'
-AWS_ASSOCIATE_TAG = 'monicah666-20'
-AWS_CREDENTIALS = [AWS_ACCESS_KEY_ID,
-                   AWS_SECRET_ACCESS_KEY, AWS_ASSOCIATE_TAG]
-
-AMAZON_ACCESS_KEY = AWS_ACCESS_KEY_ID
-AMAZON_SECRET_KEY = AWS_SECRET_ACCESS_KEY
-AMAZON_ASSOC_TAG = AWS_ASSOCIATE_TAG
-
 
 def plotDatePrice(productID, productTitle, data):
 
