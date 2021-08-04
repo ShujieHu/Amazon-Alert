@@ -2,6 +2,8 @@
 
 from amazon.api import AmazonAPI
 import smtplib
+import os
+import ssl
 import time
 import csv
 from email.mime.image import MIMEImage
@@ -11,9 +13,20 @@ import datetime as dt
 import numpy as np
 from matplotlib.dates import DateFormatter
 from matplotlib.ticker import FuncFormatter
+from sendEmail import sendEmail
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg')
+
+AWS_ACCESS_KEY_ID = 'AKIAS6ERF7OV25AWKWX2'
+AWS_SECRET_ACCESS_KEY = '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'
+AWS_ASSOCIATE_TAG = 'monicah666-20'
+AWS_CREDENTIALS = [AWS_ACCESS_KEY_ID,
+                   AWS_SECRET_ACCESS_KEY, AWS_ASSOCIATE_TAG]
+
+AMAZON_ACCESS_KEY = AWS_ACCESS_KEY_ID
+AMAZON_SECRET_KEY = AWS_SECRET_ACCESS_KEY
+AMAZON_ASSOC_TAG = AWS_ASSOCIATE_TAG
 
 
 def plotDatePrice(productID, productTitle, data):
@@ -50,18 +63,22 @@ def plotDatePrice(productID, productTitle, data):
 # ----- Email Configuration ----------------------------------------------------
 
 
-def sendEmail(product, graph, EMAIL_CREDENTIALS):
+def sendEmail(product, graph, receivers):
+    '''
+    This function allows to send graph to a list of receivers 
+    '''
+    # This is the test account set up for the project, don't change
+    sender = 'cisc593@gmail.com'
+    password = os.getenv('PASSWORD')
+    if password is None:
+        password = input('Enter password')
 
-    # Gmail credentials
-    self = EMAIL_CREDENTIALS[0]
-    password = EMAIL_CREDENTIALS[1]
-    fromAddr = EMAIL_CREDENTIALS[2]
-    toAddr = EMAIL_CREDENTIALS[3]
+    context = ssl.create_default_context()
 
     # Handle base
     msg = MIMEMultipart()
-    msg['From'] = fromAddr
-    msg['To'] = toAddr
+    msg['From'] = sender
+    msg['To'] = ", ".join(receivers)
     msg['Subject'] = "Price Alert: " + product
     msgText = MIMEText(
         '<center><br><img src="cid:image"><br></center>', 'html')
@@ -74,13 +91,15 @@ def sendEmail(product, graph, EMAIL_CREDENTIALS):
     msg.attach(msgImage)
     image.close()
 
-    # Send email
-    server = smtplib.SMTP('smtp.gmail.com', 587)
-    server.starttls()
-    server.login(self, password)
-    text = msg.as_string()
-    server.sendmail(fromAddr, toAddr, text)
-    server.quit()
+    # Use google smtp server to send email for simplicity purposes
+    server = 'smtp.gmail.com'
+    port = 465
+    with smtplib.SMTP_SSL(server, port, context=context) as server:
+        res = server.login(sender, password)
+        print("########## res", res)
+        text = msg.as_string()
+        server.sendmail(sender, receivers[0], text)
+        server.quit()
 
 # ----- Amazon API -------------------------------------------------------------
 
@@ -145,7 +164,7 @@ def addProduct(productID, csvFile, alertWhen, alertType, AWS_CREDENTIALS):
         outfile.close()
 
 
-def dailyScan(productIDs, csvFile, AWS_CREDENTIALS, EMAIL_CREDENTIALS):
+def dailyScan(productIDs, csvFile, AWS_CREDENTIALS, receivers):
     prices, targets = readPrices(csvFile)
     alerts = []
     update = []
@@ -165,4 +184,4 @@ def dailyScan(productIDs, csvFile, AWS_CREDENTIALS, EMAIL_CREDENTIALS):
 
     for alert in alerts:
         graph = plotDatePrice(alert, title, updatedPrices[alert])
-        sendEmail(title, graph, EMAIL_CREDENTIALS)
+        sendEmail(title, graph, receivers)
